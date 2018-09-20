@@ -1,10 +1,11 @@
 import tensorflow as tf
 from tensorflow.python.ops import array_ops, math_ops
-import matplotlib.pyplot as plt
-import tfdeform
-import convolve
-from scipy import misc
 import numpy as np
+from tfdeform.deform_util import dense_image_warp
+from tfdeform.convolve import gausssmooth
+
+
+__all__ = ('create_deformation_momentum',)
 
 
 def image_gradients(image, mode='forward'):
@@ -96,16 +97,16 @@ def create_deformation_momentum(shape, std, distance, stepsize=0.1,
 
     Notes
     -----
-    ``distance`` should typically not be set to more than the sidelength of the
-    image.
+    ``distance`` should typically not be more than a small fraction of the
+    sidelength of the image.
 
     The computational time is is propotional to
 
     .. math::
-        \left(\frac{distance}{std * stepsize} \right)^2
+        \frac{distance}{std * stepsize}
     """
-    grid_x, grid_y = array_ops.meshgrid(math_ops.range(shape[1]),
-                                        math_ops.range(shape[2]))
+    grid_x, grid_y = array_ops.meshgrid(math_ops.range(shape[2]),
+                                        math_ops.range(shape[1]))
     grid_x = tf.cast(grid_x[None, ..., None], 'float32')
     grid_y = tf.cast(grid_y[None, ..., None], 'float32')
 
@@ -113,8 +114,8 @@ def create_deformation_momentum(shape, std, distance, stepsize=0.1,
     coordinates = tf.identity(base_coordinates)
 
     # Create mask to stop movement at edges
-    mask = (tf.cos((grid_x - shape[1] / 2 + 1) * np.pi / (shape[1] + 2)) *
-            tf.cos((grid_y - shape[2] / 2 + 1) * np.pi / (shape[2] + 2))) ** (0.25)
+    mask = (tf.cos((grid_x - shape[2] / 2 + 1) * np.pi / (shape[2] + 2)) *
+            tf.cos((grid_y - shape[1] / 2 + 1) * np.pi / (shape[1] + 2))) ** (0.25)
 
     # Total distance is given by std * n_steps * dt, we use this
     # to work out the exact numbers.
@@ -125,7 +126,7 @@ def create_deformation_momentum(shape, std, distance, stepsize=0.1,
     C = 2 * (std ** 2)
 
     # Multiply by dt here to keep values small-ish for numerical purposes
-    momenta = dt * mask * convolve.gausssmooth(
+    momenta = dt * mask * gausssmooth(
             C * tf.random_normal(shape=[*shape, 2]), std)
 
     # Using a while loop, generate the deformation step-by-step.
@@ -133,15 +134,15 @@ def create_deformation_momentum(shape, std, distance, stepsize=0.1,
         return i < n_steps
 
     def body(i, from_coordinates, momenta):
-        v = mask * convolve.gausssmooth(momenta, std)
+        v = mask * gausssmooth(momenta, std)
 
         d1 = matmul(jacobian(momenta), v)
         d2 = matmul_transposed(jacobian(v), momenta)
         d3 = div(v) * momenta
 
         momenta = momenta - dt * (d1 + d2 + d3)
-        v = tfdeform.dense_image_warp(v, from_coordinates - base_coordinates)
-        from_coordinates = tfdeform.dense_image_warp(from_coordinates, v)
+        v = dense_image_warp(v, from_coordinates - base_coordinates)
+        from_coordinates = dense_image_warp(from_coordinates, v)
 
         return i + 1, from_coordinates, momenta
 
@@ -152,29 +153,3 @@ def create_deformation_momentum(shape, std, distance, stepsize=0.1,
     from_total_offset = from_coordinates - base_coordinates
 
     return from_total_offset
-
-
-if __name__ == '__main__':
-    config = tf.ConfigProto(device_count = {'GPU': 1})
-    session = tf.InteractiveSession(config=config)
-
-    face = misc.face(gray=True)[None, 128:-128, 256:-256, None].astype('float32')
-    face = tf.convert_to_tensor(face)
-
-    from_total_offset = create_deformation_momentum(
-        shape=[1, 512, 512], std=50.0, distance=100.0, stepsize=0.01)
-    face_deform = tfdeform.dense_image_warp(face, from_total_offset)
-
-    x0, y0 = np.meshgrid(np.arange(512), np.arange(512))
-
-    result_face, result_deform = session.run(
-        [face, face_deform])
-
-    plt.figure()
-    plt.imshow(result_face[0, ..., 0], cmap='gray')
-
-    plt.figure()
-    plt.imshow(result_deform[0, ..., 0], cmap='gray')
-
-    plt.figure()
-    plt.imshow(result_face[0, ..., 0] - result_deform[0, ..., 0], cmap='gray')

@@ -1,3 +1,5 @@
+"""Backport of new TF deform features."""
+
 import numpy as np
 
 from tensorflow.python.framework import constant_op
@@ -6,6 +8,10 @@ from tensorflow.python.framework import ops
 
 from tensorflow.python.ops import array_ops
 from tensorflow.python.ops import math_ops
+
+
+__all__ = ('dense_image_warp',)
+
 
 def _interpolate_bilinear(grid,
                           query_points,
