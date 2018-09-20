@@ -13,7 +13,7 @@ Example
 
 Input image                |  Deformed image
 :-------------------------:|:-------------------------:
-![true](https://user-images.githubusercontent.com/2202312/45844547-134b3100-bd23-11e8-924e-fa09ccf6a3fe.png)  | ![deformed](https://user-images.githubusercontent.com/2202312/45844555-19d9a880-bd23-11e8-9638-2074cdb96d3a.png)
+![true](https://user-images.githubusercontent.com/2202312/45845052-4fcb5c80-bd24-11e8-969f-3ed6df9f07fa.png)  | ![deformed](https://user-images.githubusercontent.com/2202312/45845054-51952000-bd24-11e8-9dbf-c3bf4443623e.png)
 
 Implementation details
 ----------------------
