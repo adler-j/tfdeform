@@ -11,13 +11,9 @@ Example
     # Apply the deformation field to an image
     face_deform = tfdeform.dense_image_warp(face, offset)
 
-Input image:
-
-![true](https://user-images.githubusercontent.com/2202312/45844547-134b3100-bd23-11e8-924e-fa09ccf6a3fe.png)
-
-Deformed image:
-
-![deformed](https://user-images.githubusercontent.com/2202312/45844555-19d9a880-bd23-11e8-9638-2074cdb96d3a.png)
+Input image                |  Deformed image
+:-------------------------:|:-------------------------:
+![true](https://user-images.githubusercontent.com/2202312/45844547-134b3100-bd23-11e8-924e-fa09ccf6a3fe.png)  | ![deformed](https://user-images.githubusercontent.com/2202312/45844555-19d9a880-bd23-11e8-9638-2074cdb96d3a.png)
 
 Implementation details
 ----------------------
