@@ -13,11 +13,11 @@ Example
 
 Input image:
 
-![true](https://user-images.githubusercontent.com/2202312/45844214-0548e080-bd22-11e8-80da-f84bbd0ccc8b.png)
+![true](https://user-images.githubusercontent.com/2202312/45844547-134b3100-bd23-11e8-924e-fa09ccf6a3fe.png)
 
 Deformed image:
 
-![deformed](https://user-images.githubusercontent.com/2202312/45844220-0974fe00-bd22-11e8-842c-38afd45da732.png)
+![deformed](https://user-images.githubusercontent.com/2202312/45844555-19d9a880-bd23-11e8-9638-2074cdb96d3a.png)
 
 Implementation details
 ----------------------
