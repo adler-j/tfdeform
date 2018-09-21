@@ -9,7 +9,7 @@ The size (distance travelled) of the deformation is approximately 100 pixels wit
 
     # Generate a deformation field
     offset = tfdeform.create_deformation_momentum(
-        shape=[1, *shape], std=100.0, distance=100.0, stepsize=0.01)
+        shape=[1, *shape], std=100.0, distance=100.0)
         
     # Apply the deformation field to an image
     face_deform = tfdeform.dense_image_warp(face, offset)
