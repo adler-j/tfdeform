@@ -5,7 +5,8 @@ from tfdeform.deform_util import dense_image_warp
 from tfdeform.convolve import gausssmooth
 
 
-__all__ = ('create_deformation_momentum',)
+__all__ = ('random_deformation_linear',
+           'random_deformation_momentum')
 
 
 def image_gradients(image, mode='forward'):
@@ -78,8 +79,7 @@ def div(vf):
     return dx + dy
 
 
-def create_deformation_momentum(shape, std, distance, stepsize=0.1,
-                                return_inverse=False):
+def random_deformation_momentum(shape, std, distance, stepsize=0.1):
     r"""Create a random diffeomorphic deformation.
 
     Parameters
@@ -92,8 +92,6 @@ def create_deformation_momentum(shape, std, distance, stepsize=0.1,
         Expected total effective distance for the deformation.
     stepsize : float
         How large each step should be (as a propotion of ``std``).
-    return_inverse : bool
-        If true, also return an associated inverse.
 
     Notes
     -----
@@ -123,11 +121,10 @@ def create_deformation_momentum(shape, std, distance, stepsize=0.1,
     dt = distance / (tf.cast(n_steps, 'float32') * std)
 
     # Scale to get std 1 after smoothing
-    C = 2 * (std ** 2)
+    C = np.sqrt(2 * np.pi) * std ** 2
 
     # Multiply by dt here to keep values small-ish for numerical purposes
-    momenta = dt * mask * gausssmooth(
-            C * tf.random_normal(shape=[*shape, 2]), std)
+    momenta = dt * C * tf.random_normal(shape=[*shape, 2])
 
     # Using a while loop, generate the deformation step-by-step.
     def cond(i, from_coordinates, momenta):
@@ -136,8 +133,8 @@ def create_deformation_momentum(shape, std, distance, stepsize=0.1,
     def body(i, from_coordinates, momenta):
         v = mask * gausssmooth(momenta, std)
 
-        d1 = matmul(jacobian(momenta), v)
-        d2 = matmul_transposed(jacobian(v), momenta)
+        d1 = matmul_transposed(jacobian(momenta), v)
+        d2 = matmul(jacobian(v), momenta)
         d3 = div(v) * momenta
 
         momenta = momenta - dt * (d1 + d2 + d3)
@@ -153,3 +150,39 @@ def create_deformation_momentum(shape, std, distance, stepsize=0.1,
     from_total_offset = from_coordinates - base_coordinates
 
     return from_total_offset
+
+
+def random_deformation_linear(shape, std, distance):
+    r"""Create a random deformation.
+
+    Parameters
+    ----------
+    shape : sequence of 3 ints
+        Batch, height and width.
+    std : float
+        Correlation distance for the linear deformations.
+    distance : float
+        Expected total effective distance for the deformation.
+
+    Notes
+    -----
+    ``distance`` must be significantly smaller than ``std`` to guarantee that
+    the deformation is smooth.
+    """
+    grid_x, grid_y = array_ops.meshgrid(math_ops.range(shape[2]),
+                                        math_ops.range(shape[1]))
+    grid_x = tf.cast(grid_x[None, ..., None], 'float32')
+    grid_y = tf.cast(grid_y[None, ..., None], 'float32')
+
+    # Create mask to stop movement at edges
+    mask = (tf.cos((grid_x - shape[2] / 2 + 1) * np.pi / (shape[2] + 2)) *
+            tf.cos((grid_y - shape[1] / 2 + 1) * np.pi / (shape[1] + 2))) ** (0.25)
+
+    # Scale to get std 1 after smoothing
+    C = np.sqrt(2 * np.pi) * std
+
+    # Multiply by dt here to keep values small-ish for numerical purposes
+    momenta = distance * C * tf.random_normal(shape=[*shape, 2])
+    v = mask * gausssmooth(momenta, std)
+
+    return v
