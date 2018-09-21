@@ -3,6 +3,9 @@ tfdeform
 This is a small utility library to create random _large_ deformations in tensorflow. It is mainly intended for data-augmentation.
 
 Example
+-------
+Example of deforming the "face" image. 
+The size (distance travelled) of the deformation is approximately 100 pixels with a correlation length of 100 pixels.
 
     # Generate a deformation field
     offset = tfdeform.create_deformation_momentum(
@@ -18,4 +21,4 @@ Input image                |  Deformed image
 Implementation details
 ----------------------
 The implementation is done using the geodesic shooting method, which should guarantee that the generated deformation is a diffeomorphism.
-Everything runs in tensorflow so it should be reasonably fast.
+Everything runs in tensorflow so it should be reasonably fast. Batch computation is supported.
